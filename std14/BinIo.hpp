@@ -1,127 +1,134 @@
+// Binary Input & Output
+// Require: IBufLen and OBufLen defined
+// Binary Input & Output
+// IBufLen and OBufLen should be defined
+// Only one translation unit may include this file
 #pragma once
 
 #include "Common.hpp"
 
-#include <algorithm>
 #include <cctype>
 #include <cstdio>
 
-namespace { namespace BinIo {
-    char IBuf[IBufLen];
-    char OBuf[OBufLen];
-    const char* IPtr = IBuf;
-    char* OPtr = OBuf;
-    struct IoInit {
-        inline IoInit() {
-            ::std::fread(IBuf, 1, IBufLen, stdin);
-        }
-        inline ~IoInit() {
-            ::std::fwrite(OBuf, 1, (Usz) (OPtr - OBuf), stdout);
-        }
-    } TheIoInit;
-    inline void XSkip() {
-        while (!::std::isgraph(*IPtr))
-            ++IPtr;
-    }
-    template<class Int>
-    inline void XGetDig(Int& val) {
-        val = (Int) (*IPtr++ & 0x0f);
-        while (::std::isdigit(*IPtr))
-            val = val * 10 + (Int) (*IPtr++ & 0x0f);
-    }
-    template<class Int>
-    inline void GetU(Int& val) {
-        XSkip();
-        XGetDig(val);
-    }
-    template<class Int>
-    inline void GetI(Int& val) {
-        XSkip();
-        if (*IPtr != '-')
-            XGetDig(val);
-        else {
-            ++IPtr;
-            XGetDig(val);
-            val = -val;
-        }
-    }
-    inline void GetC(char& ch) {
-        XSkip();
-        ch = *IPtr++;
-    }
-    inline void GetS(char* str) {
-        XSkip();
-        while (::std::isgraph(*IPtr))
-            *str++ = *IPtr++;
-        *str = '\0';
-    }
-    template<class Int>
-    inline void XPutDig(Int val) {
-        int cnt = 0;
-        while (val) {
-            OPtr[cnt++] = (char) ((val % 10) | '0');
-            val /= 10;
-        }
-        ::std::reverse(OPtr, OPtr + cnt);
-        OPtr += cnt;
-    }
-    template<class Int>
-    inline void PutU(Int val) {
-        if (val)
-            XPutDig(val);
-        else
-            *OPtr++ = '0';
-    }
-    template<class Int>
-    inline void PutI(Int val) {
-        if (val < 0) {
-            *OPtr++ = '-';
-            XPutDig(-val);
-        }
-        else if (val > 0)
-            XPutDig(val);
-        else
-            *OPtr++ = '0';
-    }
-    inline void PutC(char ch) {
-        *OPtr++ = ch;
-    }
-    inline void PutS(const char* str) {
-        while (*str)
-            *OPtr++ = *str++;
-    }
-    inline void PutS(const char* str, Usz len) {
-        ::std::copy(str, str + len, OPtr);
-        OPtr += len;
-    }
-    template<Usz len>
-    inline void PutS(const char (&str)[len]) {
-        ::std::copy(str, str + len - 1, OPtr);
-        OPtr += len - 1;
-    }
-    struct Get {
-        inline Get operator ,(signed   int      & val) const { GetI(val); return Get(); }
-        inline Get operator ,(signed   long     & val) const { GetI(val); return Get(); }
-        inline Get operator ,(signed   long long& val) const { GetI(val); return Get(); }
-        inline Get operator ,(unsigned int      & val) const { GetU(val); return Get(); }
-        inline Get operator ,(unsigned long     & val) const { GetU(val); return Get(); }
-        inline Get operator ,(unsigned long long& val) const { GetU(val); return Get(); }
-        inline Get operator ,(char& ch) const { GetC(ch); return Get(); }
-        inline Get operator ,(char* str) const { GetS(str); return Get(); }
-    };
-    struct Put {
-        inline Put operator ,(signed   int       val) const { PutI(val); return Put(); }
-        inline Put operator ,(signed   long      val) const { PutI(val); return Put(); }
-        inline Put operator ,(signed   long long val) const { PutI(val); return Put(); }
-        inline Put operator ,(unsigned int       val) const { PutU(val); return Put(); }
-        inline Put operator ,(unsigned long      val) const { PutU(val); return Put(); }
-        inline Put operator ,(unsigned long long val) const { PutU(val); return Put(); }
-        inline Put operator ,(char ch) const { PutC(ch); return Put(); }
-        template<Usz len>
-        inline Put operator ,(const char (&str)[len]) const { PutS<len>(str); return Put(); }
-        inline Put operator ,(const char* str) const { PutS(str); return Put(); }
-    };
-}}
+namespace ImplBinIo {
+  char IBuf[IBufLen];
+  char OBuf[OBufLen];
+  const char* IPtr = IBuf;
+  char* OPtr = OBuf;
 
-#define IoGet(...) ((void) (::BinIo::Get(), __VA_ARGS__))
-#define IoPut(...) ((void) (::BinIo::Put(), __VA_ARGS__))
+  struct Init {
+    Init() { ::std::fread(IBuf, 1, IBufLen, stdin); }
+    ~Init() { ::std::fwrite(OBuf, 1, (Uz) (OPtr - OBuf), stdout); }
+  } TheInit;
+
+  inline void XSkip() { while (!::std::isgraph(*IPtr)) ++IPtr; }
+
+  template<class Int>
+  inline void XGetDig(Int& I) {
+    I = (Int) (*IPtr++ & 0x0f);
+    while (::std::isdigit(*IPtr))
+      I = I * 10 + (Int) (*IPtr++ & 0x0f);
+  }
+
+  template<class UInt>
+  inline void GetU(UInt& I) {
+    XSkip();
+    XGetDig(I);
+  }
+
+  template<class SInt>
+  inline void GetI(SInt& I) {
+    XSkip();
+    if (*IPtr != '-')
+      XGetDig(I);
+    else {
+      ++IPtr;
+      XGetDig(I);
+      I = -I;
+    }
+  }
+
+  inline void GetC(char& C) {
+    XSkip();
+    C = *IPtr++;
+  }
+
+  inline void GetS(char* S) {
+    XSkip();
+    while (::std::isgraph(*IPtr))
+      *S++ = *IPtr++;
+    *S = '\0';
+  }
+
+  template<class Int>
+  inline void XPutDig(Int I) {
+    int cnt = 0;
+    while (I) {
+      OPtr[cnt++] = (char) ((I % 10) | '0');
+      I /= 10;
+    }
+    ::std::reverse(OPtr, OPtr + cnt);
+    OPtr += cnt;
+  }
+
+  template<class UInt>
+  inline void PutU(UInt I) {
+    if (I)
+      XPutDig(I);
+    else
+      *OPtr++ = '0';
+  }
+
+  template<class SInt>
+  inline void PutI(SInt I) {
+    if (I < 0) {
+      *OPtr++ = '-';
+      XPutDig(-I);
+    }
+    else if (I > 0)
+      XPutDig(I);
+    else
+      *OPtr++ = '0';
+  }
+
+  inline void PutC(char C) { *OPtr++ = C; }
+  inline void PutS(const char* S) { while (*S) *OPtr++ = *S++; }
+
+  inline void PutS(const char* S, Uz N) {
+    ::std::copy(S, S + N, OPtr);
+    OPtr += N;
+  }
+
+  template<Uz N>
+  inline void PutS(const char (&S)[N]) {
+    ::std::copy(S, S + N - 1, OPtr);
+    OPtr += N - 1;
+  }
+
+  struct Get {
+    Get operator ,(signed   int      & I) const { GetI(I); return {}; }
+    Get operator ,(signed   long     & I) const { GetI(I); return {}; }
+    Get operator ,(signed   long long& I) const { GetI(I); return {}; }
+    Get operator ,(unsigned int      & I) const { GetU(I); return {}; }
+    Get operator ,(unsigned long     & I) const { GetU(I); return {}; }
+    Get operator ,(unsigned long long& I) const { GetU(I); return {}; }
+    Get operator ,(char& C) const { GetC(C); return {}; }
+    Get operator ,(char* S) const { GetS(S); return {}; }
+  };
+
+  struct Put {
+    Put operator ,(signed   int       I) const { PutI(I); return {}; }
+    Put operator ,(signed   long      I) const { PutI(I); return {}; }
+    Put operator ,(signed   long long I) const { PutI(I); return {}; }
+    Put operator ,(unsigned int       I) const { PutU(I); return {}; }
+    Put operator ,(unsigned long      I) const { PutU(I); return {}; }
+    Put operator ,(unsigned long long I) const { PutU(I); return {}; }
+    Put operator ,(char C) const { PutC(C); return {}; }
+    template<Uz N>
+    Put operator ,(const char (&S)[N]) const { PutS<N>(S); return {}; }
+    Put operator ,(const char* S) const { PutS(S); return {}; }
+  };
+} // namespace ImplBinIo
+
+#define IoGet(...) ((void) (::ImplBinIo::Get{}, __VA_ARGS__))
+#define IoPut(...) ((void) (::ImplBinIo::Put{}, __VA_ARGS__))
